@@ -6,7 +6,7 @@ import heroVideo from '../assets/hero video/the_bakground_i_need_full_orag.mp4';
 
 const Hero = () => {
   const videoRef = useRef(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
 
   useEffect(() => {
@@ -22,12 +22,14 @@ const Hero = () => {
       videoRef.current.play()
         .then(() => {
           setIsMuted(false);
+          setIsPlaying(true);
         })
         .catch(err => {
           console.log("Autoplay with sound was blocked, trying muted autoplay:", err);
           if (videoRef.current) {
             videoRef.current.muted = true;
             setIsMuted(true);
+            setIsPlaying(false);
             videoRef.current.play().catch(playErr => {
               console.log("Muted autoplay also failed:", playErr);
             });
@@ -39,15 +41,30 @@ const Hero = () => {
   const toggleVideo = (e) => {
     e.stopPropagation();
     if (videoRef.current) {
-      if (videoRef.current.paused || videoRef.current.ended) {
-        if (videoRef.current.ended) {
-          videoRef.current.currentTime = 0;
+      // If currently muted (e.g. during autoplay), click should unmute it and ensure it's playing
+      if (videoRef.current.muted) {
+        videoRef.current.muted = false;
+        videoRef.current.volume = 1.0;
+        setIsMuted(false);
+        if (videoRef.current.paused || videoRef.current.ended) {
+          if (videoRef.current.ended) {
+            videoRef.current.currentTime = 0;
+          }
+          videoRef.current.play();
         }
-        videoRef.current.play();
         setIsPlaying(true);
       } else {
-        videoRef.current.pause();
-        setIsPlaying(false);
+        // Standard play/pause if already unmuted
+        if (videoRef.current.paused || videoRef.current.ended) {
+          if (videoRef.current.ended) {
+            videoRef.current.currentTime = 0;
+          }
+          videoRef.current.play();
+          setIsPlaying(true);
+        } else {
+          videoRef.current.pause();
+          setIsPlaying(false);
+        }
       }
     }
   };
