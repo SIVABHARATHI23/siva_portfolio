@@ -7,7 +7,7 @@ import heroVideo from '../assets/hero video/the_bakground_i_need_full_orag.mp4';
 const Hero = () => {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
     AOS.init({
@@ -15,56 +15,24 @@ const Hero = () => {
       once: true,
       easing: 'ease-out'
     });
-    
-    // Try to autoplay with sound, fall back to muted autoplay if blocked
-    if (videoRef.current) {
-      videoRef.current.muted = false;
-      videoRef.current.play()
-        .then(() => {
-          setIsMuted(false);
-          setIsPlaying(true);
-        })
-        .catch(err => {
-          console.log("Autoplay with sound was blocked, trying muted autoplay:", err);
-          if (videoRef.current) {
-            videoRef.current.muted = true;
-            setIsMuted(true);
-            setIsPlaying(false);
-            videoRef.current.play().catch(playErr => {
-              console.log("Muted autoplay also failed:", playErr);
-            });
-          }
-        });
-    }
   }, []);
 
   const toggleVideo = (e) => {
     e.stopPropagation();
     if (videoRef.current) {
-      // If currently muted (e.g. during autoplay), click should unmute it and ensure it's playing
-      if (videoRef.current.muted) {
+      if (videoRef.current.paused || videoRef.current.ended) {
+        if (videoRef.current.ended) {
+          videoRef.current.currentTime = 0;
+        }
+        // Ensure unmuted with sound on manual play click
         videoRef.current.muted = false;
         videoRef.current.volume = 1.0;
         setIsMuted(false);
-        if (videoRef.current.paused || videoRef.current.ended) {
-          if (videoRef.current.ended) {
-            videoRef.current.currentTime = 0;
-          }
-          videoRef.current.play();
-        }
+        videoRef.current.play();
         setIsPlaying(true);
       } else {
-        // Standard play/pause if already unmuted
-        if (videoRef.current.paused || videoRef.current.ended) {
-          if (videoRef.current.ended) {
-            videoRef.current.currentTime = 0;
-          }
-          videoRef.current.play();
-          setIsPlaying(true);
-        } else {
-          videoRef.current.pause();
-          setIsPlaying(false);
-        }
+        videoRef.current.pause();
+        setIsPlaying(false);
       }
     }
   };
@@ -90,7 +58,6 @@ const Hero = () => {
       {/* Background Video */}
       <video
         ref={videoRef}
-        autoPlay
         muted={isMuted}
         playsInline
         onEnded={handleVideoEnded}
